@@ -58,6 +58,42 @@ jobs:
         command: mvn -Dtest=FileSystemTests#testDeleteFile test
         timeout: 1
         max-score: 5
+    - name: Server handles 1000 clients
+      id: server-handles-1000-clients
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Server handles 1000 clients
+        setup-command: ''
+        command: mvn -Dtest=ServerTests#testHandlesHundredsOfClientsQuickly test
+        timeout: 5
+        max-score: 7
+    - name: Server Malformed Input
+      id: server-malformed-input
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Server Malformed Input
+        setup-command: ''
+        command: mvn -Dtest=ServerTests#testMalformedInputDoesNotCrashServer test
+        timeout: 1
+        max-score: 5
+    - name: Server handles 1000 clients
+      id: server-handles-1000-clients
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Server handles 1000 clients
+        setup-command: ''
+        command: mvn -Dtest=ServerTests#testHandlesHundredsOfClientsQuickly test
+        timeout: 5
+        max-score: 5
+    - name: Restart Persistence
+      id: restart-persistence
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Restart Persistence
+        setup-command: ''
+        command: mvn -DTest=ServerTests#testServerRestartPersistence test
+        timeout: 10
+        max-score: 8
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
@@ -66,5 +102,8 @@ jobs:
         WRITE-AND-READ-TEST_RESULTS: "${{steps.write-and-read-test.outputs.result}}"
         TEST-CREATELONGNAME_RESULTS: "${{steps.test-createlongname.outputs.result}}"
         DELETE-FILE_RESULTS: "${{steps.delete-file.outputs.result}}"
+        SERVER-HANDLES-1000-CLIENTS_RESULTS: "${{steps.server-handles-1000-clients.outputs.result}}"
+        SERVER-MALFORMED-INPUT_RESULTS: "${{steps.server-malformed-input.outputs.result}}"
+        RESTART-PERSISTENCE_RESULTS: "${{steps.restart-persistence.outputs.result}}"
       with:
-        runners: create-file-test,write-and-read-long-test,write-and-read-test,test-createlongname,delete-file
+        runners: create-file-test,write-and-read-long-test,write-and-read-test,test-createlongname,delete-file,server-handles-1000-clients,server-malformed-input,server-handles-1000-clients,restart-persistence
