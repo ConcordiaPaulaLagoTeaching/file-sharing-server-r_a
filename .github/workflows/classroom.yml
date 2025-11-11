@@ -21,10 +21,50 @@ jobs:
         setup-command: ''
         command: mvn -Dtest=FileSystemTests#testCreateFile test
         timeout: 1
-        max-score: 10
+        max-score: 5
+    - name: Write and Read Long Test
+      id: write-and-read-long-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Write and Read Long Test
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testWriteAndReadLongFile test
+        timeout: 1
+        max-score: 5
+    - name: Write and Read Test
+      id: write-and-read-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Write and Read Test
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testWriteAndReadFile test
+        timeout: 1
+        max-score: 5
+    - name: Test CreateLongName
+      id: test-createlongname
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Test CreateLongName
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testTooLongFilename test
+        timeout: 1
+        max-score: 5
+    - name: Delete File
+      id: delete-file
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Delete File
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testDeleteFile test
+        timeout: 1
+        max-score: 5
     - name: Autograding Reporter
       uses: classroom-resources/autograding-grading-reporter@v1
       env:
         CREATE-FILE-TEST_RESULTS: "${{steps.create-file-test.outputs.result}}"
+        WRITE-AND-READ-LONG-TEST_RESULTS: "${{steps.write-and-read-long-test.outputs.result}}"
+        WRITE-AND-READ-TEST_RESULTS: "${{steps.write-and-read-test.outputs.result}}"
+        TEST-CREATELONGNAME_RESULTS: "${{steps.test-createlongname.outputs.result}}"
+        DELETE-FILE_RESULTS: "${{steps.delete-file.outputs.result}}"
       with:
-        runners: create-file-test
+        runners: create-file-test,write-and-read-long-test,write-and-read-test,test-createlongname,delete-file
