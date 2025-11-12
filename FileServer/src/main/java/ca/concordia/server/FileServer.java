@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.*;
 
 public class FileServer {
 
@@ -19,47 +20,22 @@ public class FileServer {
         this.port = port;
     }
 
+    //executed by client thread?
+    // Migrate to the method run
     public void start(){
+        //sets up server connection
+        // correct port assignment later on (like this.port instead of hardcoded value or 3000)
         try (ServerSocket serverSocket = new ServerSocket(12345)) {
             System.out.println("Server started. Listening on port 12345...");
 
+            //loop currently handles one client
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Handling client: " + clientSocket);
-                try (
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                        PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)
-                ) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        System.out.println("Received from client: " + line);
-                        String[] parts = line.split(" ");
-                        String command = parts[0].toUpperCase();
-
-                        switch (command) {
-                            case "CREATE":
-                                fsManager.createFile(parts[1]);
-                                writer.println("SUCCESS: File '" + parts[1] + "' created.");
-                                writer.flush();
-                                break;
-                            //TODO: Implement other commands READ, WRITE, DELETE, LIST
-                            case "QUIT":
-                                writer.println("SUCCESS: Disconnecting.");
-                                return;
-                            default:
-                                writer.println("ERROR: Unknown command.");
-                                break;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        clientSocket.close();
-                    } catch (Exception e) {
-                        // Ignore
-                    }
-                }
+                ClientHandler clientHandler = new ClientHandler(clientSocket, fsManager);
+                //create thread for each client
+                //calls Overridden run function in FileServer.java
+                new Thread(clientHandler).start();
             }
         } catch (Exception e) {
             e.printStackTrace();

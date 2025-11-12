@@ -1,36 +1,109 @@
-name: Build and Test (Automated Grading)
-
-on:
-  push:
-  pull_request:
-
+name: Autograding Tests
+'on':
+- workflow_dispatch
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
 jobs:
-  test:
+  run-autograding-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
+    if: github.actor != 'github-classroom[bot]'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Build and test with Maven
-        run: mvn -B clean test
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: junit-test-results
-          path: target/surefire-reports
-
-      - name: Summarize results
-        if: always()
-        run: |
-          echo "### JUnit Summary" >> $GITHUB_STEP_SUMMARY
-          grep "Tests run" target/surefire-reports/*.txt >> $GITHUB_STEP_SUMMARY || echo "No JUnit results found"
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Create File Test
+      id: create-file-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Create File Test
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testCreateFile test
+        timeout: 1
+        max-score: 5
+    - name: Write and Read Long Test
+      id: write-and-read-long-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Write and Read Long Test
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testWriteAndReadLongFile test
+        timeout: 1
+        max-score: 5
+    - name: Write and Read Test
+      id: write-and-read-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Write and Read Test
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testWriteAndReadFile test
+        timeout: 1
+        max-score: 5
+    - name: Test CreateLongName
+      id: test-createlongname
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Test CreateLongName
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testTooLongFilename test
+        timeout: 1
+        max-score: 5
+    - name: Delete File
+      id: delete-file
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Delete File
+        setup-command: ''
+        command: mvn -Dtest=FileSystemTests#testDeleteFile test
+        timeout: 1
+        max-score: 5
+    - name: Server handles 1000 clients
+      id: server-handles-1000-clients
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Server handles 1000 clients
+        setup-command: ''
+        command: mvn -Dtest=ServerTests#testHandlesHundredsOfClientsQuickly test
+        timeout: 5
+        max-score: 7
+    - name: Server Malformed Input
+      id: server-malformed-input
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Server Malformed Input
+        setup-command: ''
+        command: mvn -Dtest=ServerTests#testMalformedInputDoesNotCrashServer test
+        timeout: 1
+        max-score: 5
+    - name: Server handles 1000 clients
+      id: server-handles-1000-clients
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Server handles 1000 clients
+        setup-command: ''
+        command: mvn -Dtest=ServerTests#testHandlesHundredsOfClientsQuickly test
+        timeout: 5
+        max-score: 5
+    - name: Restart Persistence
+      id: restart-persistence
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Restart Persistence
+        setup-command: ''
+        command: mvn -DTest=ServerTests#testServerRestartPersistence test
+        timeout: 10
+        max-score: 8
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        CREATE-FILE-TEST_RESULTS: "${{steps.create-file-test.outputs.result}}"
+        WRITE-AND-READ-LONG-TEST_RESULTS: "${{steps.write-and-read-long-test.outputs.result}}"
+        WRITE-AND-READ-TEST_RESULTS: "${{steps.write-and-read-test.outputs.result}}"
+        TEST-CREATELONGNAME_RESULTS: "${{steps.test-createlongname.outputs.result}}"
+        DELETE-FILE_RESULTS: "${{steps.delete-file.outputs.result}}"
+        SERVER-HANDLES-1000-CLIENTS_RESULTS: "${{steps.server-handles-1000-clients.outputs.result}}"
+        SERVER-MALFORMED-INPUT_RESULTS: "${{steps.server-malformed-input.outputs.result}}"
+        RESTART-PERSISTENCE_RESULTS: "${{steps.restart-persistence.outputs.result}}"
+      with:
+        runners: create-file-test,write-and-read-long-test,write-and-read-test,test-createlongname,delete-file,server-handles-1000-clients,server-malformed-input,server-handles-1000-clients,restart-persistence
