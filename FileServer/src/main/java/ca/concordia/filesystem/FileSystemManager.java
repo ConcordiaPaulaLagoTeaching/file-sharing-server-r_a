@@ -63,7 +63,7 @@ public class FileSystemManager {
             }
 
             int emptySpot = -1;
-            for (int i = 0: i< MAXFILES; i++) {
+            for (int i = 0; i< MAXFILES; i++) {
                 if (inodeTable[i] == null) {
                     emptySpot = i;
                     break;
@@ -105,7 +105,7 @@ public class FileSystemManager {
 
 
     // Write to a file
-    public void writeFile(String fileName, byte[] data, int size) throws Exception {
+    public void writeFile(String fileName, byte[] data) throws Exception {
         globalLock.lock();
         try{
             FEntry entry = findEntry(fileName);
@@ -113,7 +113,28 @@ public class FileSystemManager {
                 throw new Exception("File not found.");
             }
 
+            int size = data.length;
+            int numBlocks = (int) Math.ceil((double) size / BLOCK_SIZE);
 
+            int freeBlocks = countFreeBlocks();
+            if (numBlocks > freeBlocks) {
+                throw new Exception("File too large.");
+            }
+
+            // Free existing blocks
+            freeFileBlocks(entry);
+
+            // Writing data to blocks
+            int bytesWritten = 0;
+            short firstBlockIndex = -1;
+
+            for (int i = 0; i < numBlocks; i++) {
+                int blockIndex = findFreeBlock();
+                if (blockIndex == -1) {
+                    throw new Exception("No free blocks available.");
+                }
+                
+            }
 
         } finally {
             globalLock.unlock();
@@ -165,7 +186,7 @@ public class FileSystemManager {
 
 
 
-// Method to find a file entry by name
+// Finding a file entry by name
 private FEntry findEntry(String fileName) {
         for (FEntry entry : inodeTable) {
             if (entry != null && entry.getFilename().equals(fileName)) {
@@ -176,13 +197,38 @@ private FEntry findEntry(String fileName) {
 }
 
 
+// Counting number of free blocks
+private int countFreeBlocks() {
+        int count = 0;
+        for (boolean isFree : freeBlockList) {
+            if (isFree) {
+                count++;
+            }
+        }
+        return count;
+}
+
+
+// Finding a free block index
+private int findFreeBlock() {
+        for (int i = 0; i < freeBlockList.length; i++) {
+            if (freeBlockList[i]) {
+                return i;
+            }
+        }
+        return -1; // If none are free
+}
+
+
+
+// Freeing file blocks and erasing their contents
 private void freeFileBlocks(FEntry entry) throws IOException{
 
         short blockIndex = entry.getFirstBlock();   // Get the first block index
         if (blockIndex >= 0){
             freeBlockList[blockIndex] = true;                // Free the block
             disk.seek((long) blockIndex * BLOCK_SIZE);       // Move the file pointer to the start of the block
-            disk.write(new byte[BLOCK_SIZE]);                // Clear block data
+            disk.write(new byte[BLOCK_SIZE]);                // Erase old data
         }
 }
 
