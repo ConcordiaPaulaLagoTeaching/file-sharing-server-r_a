@@ -6,6 +6,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantLock;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+
 public class FileSystemManager {
 
     private final int MAXFILES = 5;
@@ -20,14 +25,14 @@ public class FileSystemManager {
     private FEntry[] inodeTable; // Array of inodes
     private boolean[] freeBlockList; // Bitmap for free blocks
 
-    public FileSystemManager(String filename, int totalSize) {
+    public FileSystemManager(String filename, int totalSize) throws IOException{
         // Initialize the file system manager with a file
         if(instance == null) {
             // Initialize the file system
            instance = this;
 
            File newFile = new File(filename);
-           if (newFile.exists()) {
+           if (!newFile.exists()) {
                 newFile.createNewFile();
            }
 
@@ -84,7 +89,7 @@ public class FileSystemManager {
     public byte[] readFile(String fileName) throws Exception {
         globalLock.lock();
         try {
-            FEntry entry = findEntry(fileName);             *****
+            FEntry entry = findEntry(fileName);
             if (entry == null) {
                 throw new Exception("File not found.");
             }
@@ -124,7 +129,7 @@ public class FileSystemManager {
             // Free existing blocks
             freeFileBlocks(entry);
 
-            // Writing data to blocks
+            // Now, we can write the new data
             int bytesWritten = 0;
             short firstBlockIndex = -1;
 
@@ -133,8 +138,21 @@ public class FileSystemManager {
                 if (blockIndex == -1) {
                     throw new Exception("No free blocks available.");
                 }
-                
+
+                freeBlockList[blockIndex] = false; // Mark block as used
+
+                // Moving the file pointer to the start of the block
+                disk.seek((long) blockIndex * BLOCK_SIZE);
+
+                // Write data to the block
+                disk.write(data, bytesWritten, Math.min(BLOCK_SIZE, size - bytesWritten));
+
+                if (i == 0) {
+                    firstBlockIndex = (short) blockIndex; // Store the index of the first block
+                }
+                bytesWritten += Math.min(BLOCK_SIZE, size - bytesWritten);
             }
+
 
         } finally {
             globalLock.unlock();
@@ -178,7 +196,7 @@ public class FileSystemManager {
                     fileList.add(entry.getFilename());
                 }
             }
-            return fileList.toArray(new String[0]);
+            return fileList.toArray(new String[0]);     // Convert List to Array and return
         } finally {
             globalLock.unlock();
         }
