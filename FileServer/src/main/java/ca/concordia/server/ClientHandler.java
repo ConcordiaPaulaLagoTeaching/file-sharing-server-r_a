@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 
 public class ClientHandler implements Runnable {
     // Create a thread of type CLientHandler
@@ -61,12 +62,26 @@ public class ClientHandler implements Runnable {
                         writer.println("SUCCESS: File '" + parts[1] + "' deleted.");
                         break;
                     case "WRITE":
-                        fsManager.writeFile(parts[1], contents.getBytes());
-                        writer.println("SUCCESS: File '" + parts[1] + "' written.");
+                        // add logic to get contents from "line"
+                        // parts[0] is the command, and parts[1] is the filename
+                        // everything after parts[1] should be contents
+                        String[] args = line.split("\\s+", 3);
+                        if (args.length < 3) {
+                            writer.println("ERROR: WRITE requires filename and data");
+                            break; //
+                        }
+                        String contents = args[2];
+                        byte[] data = contents.getBytes(StandardCharsets.UTF_8);
+                        try {
+                            fsManager.writeFile(parts[1], data);
+                            writer.println("SUCCESS: File '" + parts[1] + "' written.");
+                        } catch (Exception e){
+                            writer.println("ERROR: " + e.getMessage());
+                        }
                         break;
                     case "LIST":
-                        String[] lsFiles;
-                        if (parts[1] != null) lsFiles = fsManager.listFiles(parts[1]);
+                        String[] lsFiles = null;
+                        lsFiles = fsManager.listFiles();
                         writer.println("SUCCESS: List of Files: " + Arrays.toString(lsFiles));
                         break;
                     case "QUIT":

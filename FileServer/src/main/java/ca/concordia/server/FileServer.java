@@ -2,6 +2,7 @@ package ca.concordia.server;
 import ca.concordia.filesystem.FileSystemManager;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -12,7 +13,7 @@ public class FileServer {
 
     private FileSystemManager fsManager;
     private int port;
-    public FileServer(int port, String fileSystemName, int totalSize){
+    public FileServer(int port, String fileSystemName, int totalSize) throws IOException {
         // Initialize the FileSystemManager
         FileSystemManager fsManager = new FileSystemManager(fileSystemName,
                 10*128 );

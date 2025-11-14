@@ -16,7 +16,9 @@ public class FileSystemManager {
     private final int MAXFILES = 5;
     private final int MAXBLOCKS = 10;
 
-    private final static FileSystemManager instance;
+//    private final static FileSystemManager instance;
+    //Implement as a singleton class (so one instance but a global point of access)
+    private static volatile FileSystemManager instance;
     private final RandomAccessFile disk;
     private final ReentrantLock globalLock = new ReentrantLock();
 
