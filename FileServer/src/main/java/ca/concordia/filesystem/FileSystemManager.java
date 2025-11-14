@@ -154,6 +154,11 @@ public class FileSystemManager {
                 }
                 bytesWritten += Math.min(BLOCK_SIZE, size - bytesWritten);
             }
+            if (firstBlockIndex != -1) {
+                entry.setFirstBlock(firstBlockIndex);   // update inode to point to first block
+                entry.setFilesize((short) size);        // store file size (watch max size vs short limit)
+                // Optionally persist inode table or metadata to disk here
+            }
 
 
         } finally {

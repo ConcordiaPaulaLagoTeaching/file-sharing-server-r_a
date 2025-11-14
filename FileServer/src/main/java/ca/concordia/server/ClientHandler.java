@@ -28,7 +28,7 @@ public class ClientHandler implements Runnable {
                 PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)
         ) {
             // Optionally remove this println; Only to test if thread is created and runs as expected
-            writer.println("Client Thread running");
+            System.out.println("Client Thread running");
             String line;
             while ((line = reader.readLine()) != null) {
                 System.out.println("Received from client: " + line);
