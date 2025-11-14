@@ -4,6 +4,7 @@ import ca.concordia.filesystem.datastructures.FEntry;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.io.File;
@@ -15,6 +16,11 @@ public class FileSystemManager {
 
     private final int MAXFILES = 5;
     private final int MAXBLOCKS = 10;
+
+    private final Semaphore mutex = new Semaphore(1);      // protects readerCount
+    private final Semaphore writeLock = new Semaphore(1);  // blocks writers OR readers
+    private final Semaphore readerBlock = new Semaphore(1); // using this to prevent starvation of a reader
+    private int readerCount = 0;
 
 //    private final static FileSystemManager instance;
     //Implement as a singleton class (so one instance but a global point of access)
@@ -89,7 +95,8 @@ public class FileSystemManager {
 
     // Read from a file
     public byte[] readFile(String fileName) throws Exception {
-        globalLock.lock();
+        // globalLock.lock();
+        startRead();
         try {
             FEntry entry = findEntry(fileName);
             if (entry == null) {
@@ -106,14 +113,16 @@ public class FileSystemManager {
             return data;  
 
         } finally {
-            globalLock.unlock();
+            // globalLock.unlock();
+            endRead(); // releases lock
         }
     }
 
 
     // Write to a file
     public void writeFile(String fileName, byte[] data) throws Exception {
-        globalLock.lock();
+        // globalLock.lock();
+        startWrite();
         try{
             FEntry entry = findEntry(fileName);
             if (entry == null) {
@@ -162,7 +171,8 @@ public class FileSystemManager {
 
 
         } finally {
-            globalLock.unlock();
+            // globalLock.unlock();
+            endWrite(); // release lock
         }
         
     }
@@ -257,7 +267,43 @@ private void freeFileBlocks(FEntry entry) throws IOException{
         }
 }
 
+// Semaphore/Deadlock Prevention Operations
+/*
+ * block writing when there is a reader
+ * block reading when there is a writer
+ * If a writer enters the queue, block readerCount from incrementing
+ * Meaning that if a writer is waiting, we dont want anymore readers, giving the writer a chance
+ */
 
+private void startRead() throws InterruptedException {
+    readerBlock.acquire();
+    readerBlock.release();
+    mutex.acquire();               // lock counter
+    readerCount++;
+    if (readerCount == 1) {
+        writeLock.acquire();       // first reader blocks writers
+    }
+    mutex.release();
+}
+
+private void endRead() throws InterruptedException {
+    mutex.acquire();
+    readerCount--;
+    if (readerCount == 0) {
+        writeLock.release();       // last reader unblocks writers
+    }
+    mutex.release();
+}
+
+private void startWrite() throws InterruptedException {
+    readerBlock.acquire();          //block new readers
+    writeLock.acquire();           // only one writer allowed, blocks all readers
+}
+
+private void endWrite() {
+    writeLock.release();        
+    readerBlock.release();      //allow new readers
+}
 
 
 
